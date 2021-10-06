@@ -1,6 +1,7 @@
 import express from "express";
 import createHttpError from "http-errors";
 import PostModel from "../../db/schemas.js";
+import q2m from "query-to-mongo";
 
 const post = express.Router();
 
@@ -17,7 +18,7 @@ post
       )
         .sort(req.query.category && { category: req.query.category })
         .limit(5)
-        .skip(req.query.page ? req.query.page * 5 : 0);
+        .skip(req.query.page ? (req.query.page - 1) * 5 : 0);
       res.send(posts);
     } catch (error) {
       next(createHttpError(404, { message: error.errors }));
@@ -66,6 +67,112 @@ post
       }
     } catch (error) {
       next(createHttpError(404, { message: "User not found!" }));
+    }
+  });
+
+post
+  .route("/:postId/comments")
+  .get(async (req, res, next) => {
+    try {
+      const post = await PostModel.findById(req.params.postId);
+      if (post) {
+        res.status(201).send(post.comments);
+      } else {
+        next(createHttpError(404, { message: "No such post!" }));
+      }
+    } catch (error) {
+      next(createHttpError(400, { message: error.errors }));
+    }
+  })
+  .post(async (req, res, next) => {
+    try {
+      const newComment = { ...req.body, createdAt: new Date() };
+
+      const updatedPosts = await PostModel.findByIdAndUpdate(
+        req.params.postId,
+        {
+          $push: { comments: newComment },
+        },
+        { new: true }
+      );
+      if (updatedPosts) {
+        res.status(201).send(updatedPosts);
+      } else {
+        next(createHttpError(400, { message: "No such id!" }));
+      }
+    } catch (error) {
+      next(createHttpError(400, { message: error.errors }));
+    }
+  });
+post
+  .route("/:postId/comments/:commId")
+  .get(async (req, res, next) => {
+    try {
+      const post = await PostModel.findById(req.params.postId);
+      if (post) {
+        const comment = await post.comments.find(
+          (com) => com._id.toString() === req.params.commId
+        );
+        res.status(201).send(comment);
+      } else {
+        next(createHttpError(404, { message: "No such post!" }));
+      }
+    } catch (error) {
+      next(createHttpError(400, { message: error.errors }));
+    }
+  })
+  .delete(async (req, res, next) => {
+    try {
+      const post = await PostModel.findByIdAndUpdate(
+        req.params.postId,
+        {
+          $pull: { comments: { _id: req.params.commId } },
+        },
+        { new: true }
+      );
+      if (post) {
+        res.status(201).send(post.comments);
+      } else {
+        next(createHttpError(404, { message: "No such post!" }));
+      }
+    } catch (error) {
+      next(createHttpError(400, { message: error.errors }));
+    }
+  })
+  .put(async (req, res, next) => {
+    try {
+      // const post = await PostModel.findOneAndUpdate(
+      //   {
+      //     _id: req.params.postId,
+      //     "comments._id": req.params.commId,
+      //   },
+      //   {
+      //     "comments.$": { ...comments.$, ...req.body },
+      //   },
+      //   {
+      //     new: true,
+      //   }
+      // );
+      const post = await PostModel.findById(req.params.postId);
+      if (post) {
+        const indx = await post.comments.findIndex(
+          (c) => c._id.toString() === req.params.commId
+        );
+        if (indx !== -1) {
+          post.comments[indx] = {
+            ...post.comments[indx].toObject(),
+            ...req.body,
+          };
+          await post.save();
+          res.status(201).send(post);
+        } else {
+          next(createHttpError(404, { message: "No such comment!" }));
+        }
+      } else {
+        next(createHttpError(404, { message: "No such post!" }));
+      }
+    } catch (error) {
+      next(createHttpError(400, { message: error.errors }));
     }
   });
 

@@ -16,6 +16,13 @@ const postSchema = new Schema(
       avatar: { type: String, required: true },
     },
     content: { type: String, required: true },
+    comments: [
+      {
+        name: { type: String },
+        comment: { type: String },
+        createdAt: Date,
+      },
+    ],
   },
   { timestamps: true }
 );
