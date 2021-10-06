@@ -10,16 +10,23 @@ post
   // == GET
   .get(async (req, res, next) => {
     try {
+      const querys = q2m(req.query);
+      const totalPost = await PostModel.countDocuments(
+        querys.criteria.search && {
+          title: { $regex: querys.criteria.search },
+        }
+      );
       const posts = await PostModel.find(
-        req.query.search && {
-          title: { $regex: req.query.search },
+        querys.criteria.search && {
+          title: { $regex: querys.criteria.search },
         },
         { __v: 0 }
       )
-        .sort(req.query.category && { category: req.query.category })
-        .limit(5)
-        .skip(req.query.page ? (req.query.page - 1) * 5 : 0);
-      res.send(posts);
+        .sort(req.query.sort && { category: req.query.sort })
+        .limit(querys.options.limit || 5)
+        .skip((querys.options.skip && querys.options.skip) || 0);
+
+      res.send([{ links: querys.links("/blogPosts", totalPost) }, posts]);
     } catch (error) {
       next(createHttpError(404, { message: error.errors }));
     }
