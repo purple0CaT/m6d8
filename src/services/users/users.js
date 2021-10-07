@@ -1,21 +1,21 @@
 import express from "express";
 import createHttpError from "http-errors";
-import AuthorModel from "./schema.js";
+import UserModel from "./schema.js";
 import q2m from "query-to-mongo";
 
-const author = express.Router();
+const user = express.Router();
 
-author
+user
   .route("/")
   // == GET
   .get(async (req, res, next) => {
     try {
       const querys = q2m(req.query);
-      const totalPost = await AuthorModel.countDocuments();
+      const total = await UserModel.countDocuments();
       // querys.criteria.search && {
       //   firstName: { $regex: querys.criteria.search },
       // }
-      const posts = await AuthorModel.find(
+      const users = await UserModel.find(
         {},
         // querys.criteria.search && {
         //   firstName: { $regex: querys.criteria.search },
@@ -26,7 +26,7 @@ author
         .limit(querys.options.limit || 5)
         .skip((querys.options.skip && querys.options.skip) || 0);
 
-      res.send([{ links: querys.links("/authors", totalPost) }, posts]);
+      res.send([{ links: querys.links("/users", total) }, users]);
     } catch (error) {
       next(createHttpError(404, { message: error.errors }));
     }
@@ -34,44 +34,43 @@ author
   // == POST
   .post(async (req, res, next) => {
     try {
-      const newAuthor = new AuthorModel(req.body);
-      const { _id } = await newAuthor.save();
+      const newUser = new UserModel(req.body);
+      const { _id } = await newUser.save();
       res.status(201).send(_id);
     } catch (error) {
       next(createHttpError(400, { message: error.errors }));
     }
   });
 
-author
-  .route("/:authorId")
+user
+  .route("/:userId")
   .get(async (req, res, next) => {
     try {
-      const authors = await AuthorModel.findById(req.params.authorId, {
+      const users = await UserModel.findById(req.params.userId, {
         __v: 0,
       });
-      res.send(authors);
+      res.send(users);
     } catch (error) {
       next(createHttpError(404, { message: "Author not found!" }));
     }
   })
   .put(async (req, res, next) => {
     try {
-      const modifAuthor = await AuthorModel.findByIdAndUpdate(
-        req.params.postId,
+      const modUser = await UserModel.findByIdAndUpdate(
+        req.params.userId,
         req.body,
         { new: true } // reurns modif user
       );
-      res.send(modifAuthor);
+      console.log(modUser);
+      res.send(modUser);
     } catch (error) {
       next(createHttpError(404, { message: "Author not found!" }));
     }
   })
   .delete(async (req, res, next) => {
     try {
-      const deletedAuthor = await AuthorModel.findByIdAndDelete(
-        req.params.postId
-      );
-      if (deletedAuthor) {
+      const delUser = await UserModel.findByIdAndDelete(req.params.userId);
+      if (delUser) {
         res.status(200).send("Deleted!");
       } else {
         next(createHttpError(500));
@@ -81,4 +80,4 @@ author
     }
   });
 
-export default author;
+export default user;

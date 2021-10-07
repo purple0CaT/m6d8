@@ -5,6 +5,7 @@ import cors from "cors";
 import post from "./services/posts/posts.js";
 import { regError, generError } from "./errorHandler.js";
 import author from "./services/authors/authors.js";
+import user from "./services/users/users.js";
 //=
 const server = express();
 const port = process.env.PORT;
@@ -16,6 +17,7 @@ server.use(express.json());
 
 server.use("/blogPosts", post);
 server.use("/authors", author);
+server.use("/users", user);
 //= ERRORS
 server.use(regError);
 server.use(generError);
