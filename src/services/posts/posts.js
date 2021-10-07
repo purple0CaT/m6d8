@@ -49,7 +49,9 @@ post
     try {
       const posts = await PostModel.findById(req.params.postId, {
         __v: 0,
-      }).populate({ path: "author", select: "firstName lastName avatar" });
+      })
+        .populate({ path: "author", select: "firstName lastName avatar" })
+        .populate({ path: "likes", select: "nickName fullName" });
       res.send(posts);
     } catch (error) {
       next(createHttpError(404, { message: "User not found!" }));
@@ -188,5 +190,26 @@ post
   });
 
 // =========== Likes
+post.route("/likes/:postId").post(async (req, res, next) => {
+  const posts = await PostModel.findById(req.params.postId);
+  if (posts) {
+    const index = await posts.likes.findIndex(
+      (p) => p._id.toString() === req.body.userId
+    );
+    if (index !== -1) {
+      posts.likes.splice(index, 1);
+      await posts.save();
+      res.send(posts);
+    } else {
+      posts.likes.push(req.body.userId);
+      await posts.save();
+      res.send(posts);
+    }
+  } else {
+    res
+      .status(404)
+      .send({ message: `No such post, with id: ${req.params.postId}` });
+  }
+});
 
 export default post;

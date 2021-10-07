@@ -13,7 +13,7 @@ const postSchema = new Schema(
     },
     author: { type: Schema.Types.ObjectId, required: true, ref: "Authors" },
     content: { type: String, required: true },
-    likes: [{ type: String }],
+    likes: [{ type: Schema.Types.ObjectId, required: false, ref: "Users" }],
     comments: [
       {
         name: { type: String },
