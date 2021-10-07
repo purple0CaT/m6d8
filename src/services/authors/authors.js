@@ -57,7 +57,7 @@ author
   .put(async (req, res, next) => {
     try {
       const modifAuthor = await AuthorModel.findByIdAndUpdate(
-        req.params.postId,
+        req.params.authorId,
         req.body,
         { new: true } // reurns modif user
       );
@@ -69,7 +69,7 @@ author
   .delete(async (req, res, next) => {
     try {
       const deletedAuthor = await AuthorModel.findByIdAndDelete(
-        req.params.postId
+        req.params.authorId
       );
       if (deletedAuthor) {
         res.status(200).send("Deleted!");
