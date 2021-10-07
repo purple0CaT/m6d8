@@ -1,6 +1,6 @@
 import express from "express";
 import createHttpError from "http-errors";
-import PostModel from "../../db/schemas.js";
+import PostModel from "./schema.js";
 import q2m from "query-to-mongo";
 
 const post = express.Router();
@@ -11,6 +11,7 @@ post
   .get(async (req, res, next) => {
     try {
       const querys = q2m(req.query);
+      console.log(querys);
       const totalPost = await PostModel.countDocuments(
         querys.criteria.search && {
           title: { $regex: querys.criteria.search },
@@ -24,7 +25,8 @@ post
       )
         .sort(req.query.sort && { category: req.query.sort })
         .limit(querys.options.limit || 5)
-        .skip((querys.options.skip && querys.options.skip) || 0);
+        .skip((querys.options.skip && querys.options.skip) || 0)
+        .populate("author");
 
       res.send([{ links: querys.links("/blogPosts", totalPost) }, posts]);
     } catch (error) {
@@ -46,7 +48,9 @@ post
   .route("/:postId")
   .get(async (req, res, next) => {
     try {
-      const posts = await PostModel.findById(req.params.postId, { __v: 0 });
+      const posts = await PostModel.findById(req.params.postId, {
+        __v: 0,
+      }).populate("author");
       res.send(posts);
     } catch (error) {
       next(createHttpError(404, { message: "User not found!" }));

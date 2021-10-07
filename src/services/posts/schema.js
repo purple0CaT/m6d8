@@ -11,11 +11,9 @@ const postSchema = new Schema(
       value: { type: Number, required: true, min: 0 },
       unit: { type: String, required: true },
     },
-    author: {
-      name: { type: String, required: true },
-      avatar: { type: String, required: true },
-    },
+    author: { type: Schema.Types.ObjectId, required: true, ref: "Authors" },
     content: { type: String, required: true },
+    likes: [{ type: String }],
     comments: [
       {
         name: { type: String },
