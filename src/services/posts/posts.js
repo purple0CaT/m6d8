@@ -11,7 +11,6 @@ post
   .get(async (req, res, next) => {
     try {
       const querys = q2m(req.query);
-      console.log(querys);
       const totalPost = await PostModel.countDocuments(
         querys.criteria.search && {
           title: { $regex: querys.criteria.search },
@@ -26,7 +25,7 @@ post
         .sort(req.query.sort && { category: req.query.sort })
         .limit(querys.options.limit || 5)
         .skip((querys.options.skip && querys.options.skip) || 0)
-        .populate("author");
+        .populate({ path: "author", select: "firstName lastName avatar" });
 
       res.send([{ links: querys.links("/blogPosts", totalPost) }, posts]);
     } catch (error) {
@@ -50,7 +49,7 @@ post
     try {
       const posts = await PostModel.findById(req.params.postId, {
         __v: 0,
-      }).populate("author");
+      }).populate({ path: "author", select: "firstName lastName avatar" });
       res.send(posts);
     } catch (error) {
       next(createHttpError(404, { message: "User not found!" }));
@@ -81,6 +80,7 @@ post
     }
   });
 
+// =========== COMMMENTS
 post
   .route("/:postId/comments")
   .get(async (req, res, next) => {
@@ -186,5 +186,7 @@ post
       next(createHttpError(400, { message: error.errors }));
     }
   });
+
+// =========== Likes
 
 export default post;
